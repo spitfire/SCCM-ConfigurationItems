@@ -96,10 +96,10 @@ If( $CCMClientCacheSize -ne $NewCCMClientCacheSize)
             Get-ChildItem($CCMCLientCacheLocation) | Where { $_.PSIsContainer } | Where { $UsedFolders -notcontains $_.FullName } | ForEach-Object { Remove-Item $_.FullName -recurse}
             #Endregion clear cache orpaned items
         }
-        $CCMClientCacheSize = $NewCCMClientCacheSize
+        $CCMCache.TotalSize = $NewCCMClientCacheSize
     }
     Else
     {
-        $CCMClientCacheSize = $NewCCMClientCacheSize
+        $CCMCache.TotalSize = $NewCCMClientCacheSize
     }
 }
