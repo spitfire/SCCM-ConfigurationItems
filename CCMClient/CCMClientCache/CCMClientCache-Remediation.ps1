@@ -19,6 +19,9 @@
 #Create COM Object for CCM and get Cache Information
 $CCM = New-Object -com UIResource.UIResourceMGR
 $CCMCache = $CCM.GetCacheInfo()
+$CCMClientCacheSize  = $CCMCache.TotalSize
+$CCMCLientCacheFree = $CCMCache.FreeSize
+$CCMCLientCacheLocation = $CCMCache.Location
 
 #=======================================
 # Get the free space on the disk where CCMCache is stored (in MegaBytes)
@@ -54,11 +57,49 @@ $CCMCache = $CCM.GetCacheInfo()
 
 # Get the size available and then return the cache space needed
 $FreeSpaceAvailable = Get-FreeSystemDiskspace
-$CCMClientCacheSize  = $CCMCache.TotalSize
 $NewCCMClientCacheSize = Check-CCMClientCacheSize $FreeSpaceAvailable
 
 # Checking cache size has been set
 If( $CCMClientCacheSize -ne $NewCCMClientCacheSize)
 {
-    $CCMCache.TotalSize = $NewCCMClientCacheSize
+    If ($NewCCMClientCacheSize -lt $CCMClientCacheSize)#If new Client cache size is smaller than current cache size perform additional checks:
+    {
+        If ($NewCCMClientCacheSize -lt ($CCMClientCacheSize - $CCMCLientCacheFree))#If new Client cache size is smaller than size of items currently in cache, clear the cache
+        {
+            #Region clear cache items
+            $ccmCacheItems = `
+            Try
+            {
+                get-wmiobject -query "SELECT * FROM CacheInfoEx" -namespace "ROOT\ccm\SoftMgmtAgent"
+            }
+            Catch
+            {
+                Write-Log "Error: Failed to get ccmcache items"
+            }
+            
+            foreach ($ccmCacheItem in $ccmCacheItems)
+            {
+                [guid]$ccmCacheItemCacheId = $ccmCacheItem.CacheId
+                [string]$ccmCacheItemLocation = $ccmCacheItem.Location
+                        Try
+                        {
+                            [wmi]"ROOT\ccm\SoftMgmtAgent:CacheInfoEx.CacheId=`"$ccmCacheItemCacheId`"" | Remove-WmiObject
+                        }
+                        Catch
+                        {
+                            Write-Host "Error: Failed to delete $ccmCacheItemCacheId from $ccmCacheItemLocation" -Source Clean-CMCacheOldItems -Severity 2
+                        }
+            }#Endregion clear cache items
+
+            #Region clear cache orpaned items
+            $UsedFolders = $CacheElements | ForEach-Object { Select-Object -inputobject $_.Location }
+            Get-ChildItem($CCMCLientCacheLocation) | Where { $_.PSIsContainer } | Where { $UsedFolders -notcontains $_.FullName } | ForEach-Object { Remove-Item $_.FullName -recurse}
+            #Endregion clear cache orpaned items
+        }
+        $CCMClientCacheSize = $NewCCMClientCacheSize
+    }
+    Else
+    {
+        $CCMClientCacheSize = $NewCCMClientCacheSize
+    }
 }
