@@ -17,51 +17,36 @@
 #>
 If (Test-Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\")
 {
-    If (!(Test-Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\Commandline Policy"))
-    {
-        If (!(Test-Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate"))
-        {
-            New-Item -Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\" -Name "AutoUpdate"
-        }
-        New-Item -Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\" -Name "Commandline Policy"
-    }
-
-    If  (((Get-ItemProperty "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Banned") -eq "true")`
-        -and`
-        ((Get-ItemProperty "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Enable") -eq "false"))
-        {
-            Write-Host "Compliant"
-        }
-    Else
-    {
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\Commandline Policy\" -Name "Banned" -Value "true"
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\AutoUpdate\Commandline Policy\" -Name "Enable" -Value "false"
-    }
+    $ICAClientBasePath = "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\"
 }
 ElseIf (Test-Path "HKLM:\SOFTWARE\Citrix\ICA Client\")
 {
-    If (!(Test-Path "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\Commandline Policy"))
-    {
-        If (!(Test-Path "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate"))
-        {
-            New-Item -Path "HKLM:\SOFTWARE\Citrix\ICA Client\" -Name "AutoUpdate"
-        }
-        New-Item -Path "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\" -Name "Commandline Policy"
-    }
-
-    If  (((Get-ItemProperty "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Banned") -eq "true")`
-        -and`
-        ((Get-ItemProperty "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Enable") -eq "false"))
-        {
-            Write-Host "Compliant"
-        }
-    Else
-    {
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\Commandline Policy\" -Name "Banned" -Value "true"
-        Set-ItemProperty -Path "HKLM:\SOFTWARE\Citrix\ICA Client\AutoUpdate\Commandline Policy\" -Name "Enable" -Value "false"
-    }
+    $ICAClientBasePath = "HKLM:\SOFTWARE\Citrix\ICA Client\"
 }
 Else
 {
     Write-Host "Non-Compliant"
+}
+If ($ICAClientBasePath)
+{
+    If (!(Test-Path "$ICAClientBasePath\AutoUpdate\Commandline Policy"))
+    {
+        If (!(Test-Path "$ICAClientBasePath\AutoUpdate"))
+        {
+            New-Item -Path "$ICAClientBasePath\" -Name "AutoUpdate"
+        }
+        New-Item -Path "$ICAClientBasePath\AutoUpdate\" -Name "Commandline Policy"
+    }
+
+    If  (((Get-ItemProperty "$ICAClientBasePath\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Banned") -eq "true")`
+        -and`
+        ((Get-ItemProperty "$ICAClientBasePath\AutoUpdate\Commandline Policy\"|Select-Object -ExpandProperty "Enable") -eq "false"))
+        {
+            Write-Host "Compliant"
+        }
+    Else
+    {
+        Set-ItemProperty -Path "$ICAClientBasePath\AutoUpdate\Commandline Policy\" -Name "Banned" -Value "true"
+        Set-ItemProperty -Path "$ICAClientBasePath\AutoUpdate\Commandline Policy\" -Name "Enable" -Value "false"
+    }
 }
